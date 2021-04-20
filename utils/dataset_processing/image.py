@@ -172,6 +172,10 @@ class DepthImage(Image):
     def from_tiff(cls, fname):
         return cls(imread(fname))
 
+    @classmethod
+    def from_png(cls, fname):
+        return cls(imread(fname)/1000)
+
     def inpaint(self, missing_value=0):
         """
         Inpaint missing values in depth image.
