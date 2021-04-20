@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from skimage.draw import polygon
 from skimage.feature import peak_local_max
+import math
 
 
 def _gr_text_to_no(l, offset=(0, 0)):
@@ -103,6 +104,30 @@ class GraspRectangles:
                 # index based on row, column (y,x), and the Jacquard dataset's angles are flipped around an axis.
                 grs.append(Grasp(np.array([y, x]), -theta / 180.0 * np.pi, w, h).as_gr)
         grs = cls(grs)
+        grs.scale(scale)
+        return grs
+
+    @classmethod
+    def load_from_graspnet_file(cls, fname, scale=1.0):
+        grs = []
+        f = np.load(fname)
+        f = f[0::10]
+        for l in f:
+            x = l[0]
+            y = l[1]
+            ox = l[2]
+            oy = l[3]
+
+            angle = math.atan2(oy-y, ox-x)
+
+            w = math.hypot(ox - x, oy - y)
+            h = l[4]
+
+            grs.append(Grasp(np.array([y, x]), angle, w, h).as_gr)
+
+            # cx, cy, ox, oy, h, q, oid
+        grs = cls(grs)
+
         grs.scale(scale)
         return grs
 
