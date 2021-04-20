@@ -78,7 +78,15 @@ if __name__ == '__main__':
     # Load Dataset
     logging.info('Loading {} Dataset...'.format(args.dataset.title()))
     Dataset = get_dataset(args.dataset)
-    test_dataset = Dataset(args.dataset_path,
+
+    dataset_path = {
+        "cornell": "/home/slave/Documents/Datasets/Cornell",
+        "custom": "/home/slave/Documents/Datasets/LH7",
+        "jacquard": "/home/slave/Documents/Datasets/Jacquard",
+        "graspnet": "/home/slave/Documents/Datasets/Graspnet"
+    }
+
+    test_dataset = Dataset(dataset_path[args.dataset],
                            ds_rotate=args.ds_rotate,
                            random_rotate=args.augment,
                            random_zoom=args.augment,
@@ -119,6 +127,7 @@ if __name__ == '__main__':
 
         with torch.no_grad():
             for idx, (x, y, didx, rot, zoom) in enumerate(test_data):
+                logging.info('Processing {}/{}'.format(idx+1, len(test_data)))
                 xc = x.to(device)
                 yc = [yi.to(device) for yi in y]
                 lossd = net.compute_loss(xc, yc)
@@ -134,8 +143,10 @@ if __name__ == '__main__':
                                                        )
                     if s:
                         results['correct'] += 1
+                        print("correct")
                     else:
                         results['failed'] += 1
+                        print("failed")
 
                 if args.jacquard_output:
                     grasps = grasp.detect_grasps(q_img, ang_img, width_img=width_img, no_grasps=1)
@@ -145,14 +156,9 @@ if __name__ == '__main__':
                             f.write(g.to_jacquard(scale=1024 / 300) + '\n')
 
                 if args.vis:
-                    save_results(
-                        rgb_img=test_data.dataset.get_rgb(didx, rot, zoom, normalise=False),
-                        depth_img=test_data.dataset.get_depth(didx, rot, zoom),
-                        grasp_q_img=q_img,
-                        grasp_angle_img=ang_img,
-                        no_grasps=args.n_grasps,
-                        grasp_width_img=width_img
-                    )
+                    evaluation.plot_output(test_data.dataset.get_rgb(didx, rot, zoom, normalise=False),
+                                           test_data.dataset.get_depth(didx, rot, zoom), q_img,
+                                           ang_img, no_grasps=args.n_grasps, grasp_width_img=width_img)
 
         avg_time = (time.time() - start_time) / len(test_data)
         logging.info('Average evaluation time per image: {}ms'.format(avg_time * 1000))
