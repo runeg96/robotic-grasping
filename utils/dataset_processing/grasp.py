@@ -109,26 +109,17 @@ class GraspRectangles:
 
     @classmethod
     def load_from_graspnet_file(cls, fname, scale=1.0):
+        # t = time.process_time()
+        f = np.load(fname, allow_pickle=True)
+        # f = f[0::10]
         grs = []
-        f = np.load(fname)
-        f = f[0::10]
         for l in f:
-            x = l[0]
-            y = l[1]
-            ox = l[2]
-            oy = l[3]
-
-            angle = math.atan2(oy-y, ox-x)
-
-            w = math.hypot(ox - x, oy - y)
-            h = l[4]
-
-            grs.append(Grasp(np.array([y, x]), angle, w, h).as_gr)
-
-            # cx, cy, ox, oy, h, q, oid
+            grs.append(GraspRectangle(l))
+        # print(len(f))
         grs = cls(grs)
 
         grs.scale(scale)
+        # print("Time of fucntion ms: ",(time.process_time() - t) * 1000)
         return grs
 
     def append(self, gr):
