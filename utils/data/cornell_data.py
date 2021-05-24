@@ -32,9 +32,9 @@ class CornellDataset(GraspDatasetBase):
         self.depth_files = [f.replace('cpos.txt', 'd.tiff') for f in self.grasp_files]
         self.rgb_files = [f.replace('d.tiff', 'r.png') for f in self.depth_files]
 
-        self.grasp_files = graspf[int(self.length*start):int(self.length*end)]
-        self.depth_files = depthf[int(self.length*start):int(self.length*end)]
-        self.rgb_files = rgbf[int(self.length*start):int(self.length*end)]
+        self.grasp_files = self.grasp_files[int(self.length*start):int(self.length*end)]
+        self.depth_files = self.depth_files[int(self.length*start):int(self.length*end)]
+        self.rgb_files = self.rgb_files[int(self.length*start):int(self.length*end)]
 
     def _get_crop_attrs(self, idx):
         gtbbs = grasp.GraspRectangles.load_from_cornell_file(self.grasp_files[idx])
