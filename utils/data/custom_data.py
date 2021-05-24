@@ -20,7 +20,13 @@ class CustomDataset(GraspDatasetBase):
         :param kwargs: kwargs for GraspDatasetBase
         """
         super(CustomDataset, self).__init__(**kwargs)
-        graspf = glob.glob(os.path.join(file_path, '*_newer_annotations.txt'))
+
+        split = "all"
+        if split == 'all':
+            graspf = self.grasp_files = glob.glob(os.path.join(file_path, '*_annotations.txt'))
+        else:
+            graspf = self.grasp_files = glob.glob(os.path.join(file_path, '*_{}_annotations.txt'.format(split)))
+
         self.length = len(graspf)
         graspf.sort()
         l = len(graspf)
@@ -30,9 +36,9 @@ class CustomDataset(GraspDatasetBase):
         if ds_rotate:
             graspf = graspf[int(l*ds_rotate):] + graspf[:int(l*ds_rotate)]
 
-        depthf = [f.replace('_newer_annotations.txt', '.tiff') for f in graspf]
+        depthf = [f.replace('_annotations.txt', '.tiff') for f in graspf]
         depthf = [f.replace('color', 'depth') for f in depthf]
-        rgbf = [f.replace('_newer_annotations.txt', '.png') for f in graspf]
+        rgbf = [f.replace('_annotations.txt', '.png') for f in graspf]
 
         self.grasp_files = graspf[int(l*start):int(l*end)]
         self.depth_files = depthf[int(l*start):int(l*end)]
@@ -41,8 +47,8 @@ class CustomDataset(GraspDatasetBase):
     def _get_crop_attrs(self, idx):
         gtbbs = grasp.GraspRectangles.load_from_cornell_file(self.grasp_files[idx])
         center = gtbbs.center
-        left = max(0, min(center[1] - self.output_size // 2, 640 - self.output_size))
-        top = max(0, min(center[0] - self.output_size // 2, 480 - self.output_size))
+        left = max(0, min(center[1] - 480 // 2, 640 - 480))
+        top =max(0, min(center[0] - 480 // 2, 640 - 480))
         return center, left, top
 
     def get_gtbb(self, idx, rot=0, zoom=1.0):
@@ -57,7 +63,8 @@ class CustomDataset(GraspDatasetBase):
         depth_img = image.DepthImage.from_tiff(self.depth_files[idx])
         center, left, top = self._get_crop_attrs(idx)
         depth_img.rotate(rot, center)
-        depth_img.crop((top, left), (min(480, top + self.output_size), min(640, left + self.output_size)))
+        # depth_img.crop((top, left), (min(480, top + self.output_size), min(640, left + self.output_size)))
+        depth_img.crop((top, left), (min(480, top + 480), min(640, left + 480)))
         depth_img.normalise()
         depth_img.zoom(zoom)
         depth_img.resize((self.output_size, self.output_size))
@@ -67,7 +74,7 @@ class CustomDataset(GraspDatasetBase):
         rgb_img = image.Image.from_file(self.rgb_files[idx])
         center, left, top = self._get_crop_attrs(idx)
         rgb_img.rotate(rot, center)
-        rgb_img.crop((top, left), (min(480, top + self.output_size), min(640, left + self.output_size)))
+        rgb_img.crop((top, left), (min(480, top + 480), min(640, left + 480)))
         rgb_img.zoom(zoom)
         rgb_img.resize((self.output_size, self.output_size))
         if normalise:

@@ -56,7 +56,7 @@ class GraspnetDataset(GraspDatasetBase):
             raise FileNotFoundError('No dataset files found. Check path: {}'.format(file_path))
 
         if ds_rotate:
-            graspf = graspf[int(l*ds_rotate):] + graspf[:int(l*ds_rotate)]
+            self.grasp_files = self.grasp_files[int(self.length * ds_rotate):] + self.grasp_files[:int(self.length * ds_rotate)]
 
         depthf = [f.replace('rect', 'depth') for f in graspf]
         depthf = [f.replace('_fric' + fric + '.npy', '.png') for f in depthf]
@@ -90,7 +90,7 @@ class GraspnetDataset(GraspDatasetBase):
         depth_img.crop((top, left), (min(720, top + 720), min(1280, left + 720)))
         depth_img.inpaint_graspnet()
         depth_img.normalise()
-        depth_img.zoom(1.0)
+        depth_img.zoom(zoom)
         depth_img.resize((self.output_size, self.output_size))
         return depth_img.img
 

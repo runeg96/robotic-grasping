@@ -10,6 +10,7 @@ from inference.post_process import post_process_output
 from utils.data import get_dataset
 from utils.dataset_processing import evaluation, grasp
 from utils.visualisation.plot import save_results
+import cv2
 
 logging.basicConfig(level=logging.INFO)
 
@@ -86,29 +87,18 @@ if __name__ == '__main__':
         "graspnet": "/home/slave/Documents/Datasets/Graspnet"
     }
 
-    test_dataset = Dataset(dataset_path[args.dataset],
-                           ds_rotate=args.ds_rotate,
-                           random_rotate=args.augment,
-                           random_zoom=args.augment,
-                           include_depth=args.use_depth,
-                           include_rgb=args.use_rgb)
-
-    indices = list(range(test_dataset.length))
-    split = int(np.floor(args.split * test_dataset.length))
-    if args.ds_shuffle:
-        np.random.seed(args.random_seed)
-        np.random.shuffle(indices)
-    val_indices = indices[split:]
-    val_sampler = torch.utils.data.sampler.SubsetRandomSampler(val_indices)
-    logging.info('Validation size: {}'.format(len(val_indices)))
+    test_dataset = Dataset(dataset_path[args.dataset], start=args.split, end=1.0, ds_rotate=args.ds_rotate,
+                           random_rotate=args.augment, random_zoom=args.augment,
+                           include_depth=args.use_depth, include_rgb=args.use_rgb)
 
     test_data = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=1,
-        num_workers=args.num_workers,
-        sampler=val_sampler
+        shuffle=False,
+        num_workers=args.num_workers
     )
     logging.info('Done')
+
 
     for network in args.network:
         logging.info('\nEvaluating model {}'.format(network))
@@ -156,9 +146,9 @@ if __name__ == '__main__':
                             f.write(g.to_jacquard(scale=1024 / 300) + '\n')
 
                 if args.vis:
-                    evaluation.plot_output(test_data.dataset.get_rgb(didx, rot, zoom, normalise=False),
-                                           test_data.dataset.get_depth(didx, rot, zoom), q_img,
-                                           ang_img, no_grasps=args.n_grasps, grasp_width_img=width_img)
+                    evaluation.plot_output(rgb_img=test_data.dataset.get_rgb(didx, rot, zoom, normalise=False),
+                                           depth_img=test_data.dataset.get_depth(didx, rot, zoom), grasp_q_img=q_img,
+                                           grasp_angle_img=ang_img, no_grasps=args.n_grasps, grasp_width_img=width_img, ground_truth_bbs=test_data.dataset.get_gtbb(didx, rot, zoom))
 
         avg_time = (time.time() - start_time) / len(test_data)
         logging.info('Average evaluation time per image: {}ms'.format(avg_time * 1000))

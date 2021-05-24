@@ -29,7 +29,7 @@ def parse_args():
                         help='Network name in inference/models')
     parser.add_argument('--use-depth', type=int, default=1,
                         help='Use Depth image for training (1/0)')
-    parser.add_argument('--use-rgb', type=int, default=1,
+    parser.add_argument('--use-rgb', type=int, default=0,
                         help='Use RGB image for training (1/0)')
     parser.add_argument('--use-dropout', type=int, default=1,
                         help='Use dropout for training (1/0)')
@@ -248,39 +248,24 @@ def run():
         "graspnet": "/home/slave/Documents/Datasets/Graspnet"
     }
 
-    dataset = Dataset(path[args.dataset],
-                      ds_rotate=args.ds_rotate,
-                      random_rotate=True,
-                      random_zoom=True,
-                      include_depth=args.use_depth,
-                      include_rgb=args.use_rgb)
-    logging.info('Dataset size is {}'.format(dataset.length))
-
-    # Creating data indices for training and validation splits
-    indices = list(range(dataset.length))
-    split = int(np.floor(args.split * dataset.length))
-    if args.ds_shuffle:
-        np.random.seed(args.random_seed)
-        np.random.shuffle(indices)
-    train_indices, val_indices = indices[:split], indices[split:]
-    logging.info('Training size: {}'.format(len(train_indices)))
-    logging.info('Validation size: {}'.format(len(val_indices)))
-
-    # Creating data samplers and loaders
-    train_sampler = torch.utils.data.sampler.SubsetRandomSampler(train_indices)
-    val_sampler = torch.utils.data.sampler.SubsetRandomSampler(val_indices)
-
+    print("from train: ",path[args.dataset])
+    train_dataset = Dataset(path[args.dataset], start=0.0, end=args.split, ds_rotate=args.ds_rotate,
+                            random_rotate=True, random_zoom=True,
+                            include_depth=args.use_depth, include_rgb=args.use_rgb)
     train_data = torch.utils.data.DataLoader(
-        dataset,
+        train_dataset,
         batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        sampler=train_sampler
+        shuffle=True,
+        num_workers=args.num_workers
     )
+    val_dataset = Dataset(path[args.dataset], start=args.split, end=1.0, ds_rotate=args.ds_rotate,
+                          random_rotate=True, random_zoom=True,
+                          include_depth=args.use_depth, include_rgb=args.use_rgb)
     val_data = torch.utils.data.DataLoader(
-        dataset,
+        val_dataset,
         batch_size=1,
-        num_workers=args.num_workers,
-        sampler=val_sampler
+        shuffle=False,
+        num_workers=args.num_workers
     )
     logging.info('Done')
 
