@@ -23,7 +23,7 @@ class GraspnetDataset(GraspDatasetBase):
 
         TOTAL_SCENE_NUM = 190
         camera = "realsense"
-        split = "test_novel"
+        split = "train"
         sceneIds = []
         fric = "04"
         self.mean_file = ""
@@ -102,7 +102,7 @@ class GraspnetDataset(GraspDatasetBase):
         rgb_img = image.Image.from_file(self.rgb_files[idx])
         # print(self.rgb_files[idx])
         center, left, top = self._get_crop_attrs(idx)
-        depth_img.rotate(rot, center)
+        rgb_img.rotate(rot, center)
         rgb_img.crop((top, left), (min(720, top + 720), min(1280, left + 720)))
         rgb_img.zoom(zoom)
         rgb_img.resize((self.output_size, self.output_size))
