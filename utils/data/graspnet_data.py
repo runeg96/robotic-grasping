@@ -23,7 +23,7 @@ class GraspnetDataset(GraspDatasetBase):
 
         TOTAL_SCENE_NUM = 190
         camera = "realsense"
-        split = "train"
+        split = "test_novel"
         sceneIds = []
         fric = "04"
         self.mean_file = ""
@@ -50,13 +50,13 @@ class GraspnetDataset(GraspDatasetBase):
                 # graspf.append(os.path.join(file_path,'scene_'+str(i).zfill(4), camera, 'rect', str(img_num).zfill(4)+'_simple'+'.npy'))
 
         # graspf.sort()
-        self.length = len(graspf)
+        l = len(graspf)
 
-        if self.length == 0:
+        if l == 0:
             raise FileNotFoundError('No dataset files found. Check path: {}'.format(file_path))
 
         if ds_rotate:
-            self.grasp_files = self.grasp_files[int(self.length * ds_rotate):] + self.grasp_files[:int(self.length * ds_rotate)]
+            graspf = graspf[int(l*ds_rotate):] + graspf[:int(l*ds_rotate)]
 
         depthf = [f.replace('rect', 'depth') for f in graspf]
         depthf = [f.replace('_fric' + fric + '.npy', '.png') for f in depthf]
@@ -65,28 +65,32 @@ class GraspnetDataset(GraspDatasetBase):
         rgbf = [f.replace('depth', 'rgb') for f in depthf]
 
         mean_file = np.load(file_path + "/" + split + "_mean" + fric + ".npy").tolist()
-        self.mean_file = mean_file[int(self.length*start):int(self.length*end)]
-        self.grasp_files = graspf[int(self.length*start):int(self.length*end)]
-        self.depth_files = depthf[int(self.length*start):int(self.length*end)]
-        self.rgb_files = rgbf[int(self.length*start):int(self.length*end)]
+        self.mean_file = mean_file[int(l*start):int(l*end)]
+        self.grasp_files = graspf[int(l*start):int(l*end)]
+        self.depth_files = depthf[int(l*start):int(l*end)]
+        self.rgb_files = rgbf[int(l*start):int(l*end)]
 
     def _get_crop_attrs(self, idx):
         center_x = int(self.mean_file[idx])
         top = 0
         left = max(0, min(center_x - 720 // 2, 1280 - 720))
-        return center_x, left, top
+        center = (360,center_x)
+        return center, left, top
 
     def get_gtbb(self, idx, rot=0, zoom=1.0):
         center, left, top = self._get_crop_attrs(idx)
         gtbbs = grasp.GraspRectangles.load_from_graspnet_file(self.grasp_files[idx], scale = self.output_size / 720)
-        gtbbs.offset((-top, int(-left*(self.output_size / 720))))
-        # gtbbs.zoom(zoom, (self.output_size//2, self.output_size//2))
+        center = (center[0] * (self.output_size / 720), center[1] * (self.output_size / 720))
+        gtbbs.rotate(rot, center)
+        gtbbs.offset((-top*(self.output_size / 720), int(-left*(self.output_size / 720))))
+        gtbbs.zoom(zoom, (self.output_size//2, self.output_size//2))
         return gtbbs
 
     def get_depth(self, idx, rot=0, zoom=1.0):
         depth_img = image.DepthImage.from_png(self.depth_files[idx])
         center, left, top = self._get_crop_attrs(idx)
         # print("Image: ",self.rgb_files[idx], "center: ",center)
+        depth_img.rotate(rot, center)
         depth_img.crop((top, left), (min(720, top + 720), min(1280, left + 720)))
         depth_img.inpaint_graspnet()
         depth_img.normalise()
@@ -98,6 +102,7 @@ class GraspnetDataset(GraspDatasetBase):
         rgb_img = image.Image.from_file(self.rgb_files[idx])
         # print(self.rgb_files[idx])
         center, left, top = self._get_crop_attrs(idx)
+        depth_img.rotate(rot, center)
         rgb_img.crop((top, left), (min(720, top + 720), min(1280, left + 720)))
         rgb_img.zoom(zoom)
         rgb_img.resize((self.output_size, self.output_size))
