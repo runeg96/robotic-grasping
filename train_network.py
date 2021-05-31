@@ -25,6 +25,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train network')
 
     # Network
+    parser.add_argument('--input-size', type=int, default=224,
+                    help='Input image size for the network')
     parser.add_argument('--network', type=str, default='grconvnet3',
                         help='Network name in inference/models')
     parser.add_argument('--use-depth', type=int, default=1,
@@ -249,7 +251,7 @@ def run():
     }
 
     print("from train: ",path[args.dataset])
-    train_dataset = Dataset(path[args.dataset], start=0.0, end=args.split, ds_rotate=args.ds_rotate,
+    train_dataset = Dataset(path[args.dataset], output_size=args.input_size, start=0.0, end=args.split, ds_rotate=args.ds_rotate,
                             random_rotate=True, random_zoom=True,
                             include_depth=args.use_depth, include_rgb=args.use_rgb)
     train_data = torch.utils.data.DataLoader(
@@ -258,7 +260,7 @@ def run():
         shuffle=True,
         num_workers=args.num_workers
     )
-    val_dataset = Dataset(path[args.dataset], start=args.split, end=1.0, ds_rotate=args.ds_rotate,
+    val_dataset = Dataset(path[args.dataset], output_size=args.input_size, start=args.split, end=1.0, ds_rotate=args.ds_rotate,
                           random_rotate=True, random_zoom=True,
                           include_depth=args.use_depth, include_rgb=args.use_rgb)
     val_data = torch.utils.data.DataLoader(
@@ -291,10 +293,10 @@ def run():
         raise NotImplementedError('Optimizer {} is not implemented'.format(args.optim))
 
     # Print model architecture.
-    summary(net, (input_channels, 224, 224))
+    summary(net, (input_channels, args.input_size, args.input_size))
     f = open(os.path.join(save_folder, 'arch.txt'), 'w')
     sys.stdout = f
-    summary(net, (input_channels, 224, 224))
+    summary(net, (input_channels, args.input_size, args.input_size))
     sys.stdout = sys.__stdout__
     f.close()
 
