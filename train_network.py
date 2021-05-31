@@ -29,7 +29,7 @@ def parse_args():
                         help='Network name in inference/models')
     parser.add_argument('--use-depth', type=int, default=1,
                         help='Use Depth image for training (1/0)')
-    parser.add_argument('--use-rgb', type=int, default=0,
+    parser.add_argument('--use-rgb', type=int, default=1,
                         help='Use RGB image for training (1/0)')
     parser.add_argument('--use-dropout', type=int, default=1,
                         help='Use dropout for training (1/0)')
@@ -243,7 +243,7 @@ def run():
 
     path = {
         "cornell": "/home/slave/Documents/Datasets/Cornell",
-        "custom": "/home/slave/Documents/Datasets/LH7",
+        "custom": "/home/slave/Documents/Datasets/multi-view-dataset-converted",
         "jacquard": "/home/slave/Documents/Datasets/Jacquard",
         "graspnet": "/home/slave/Documents/Datasets/Graspnet"
     }
