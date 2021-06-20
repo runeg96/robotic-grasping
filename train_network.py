@@ -250,8 +250,8 @@ def run():
         "graspnet": "/home/slave/Documents/Datasets/Graspnet"
     }
 
-    print("from train: ",path[args.dataset])
-    train_dataset = Dataset(path[args.dataset], output_size=args.input_size, start=0.0, end=args.split, ds_rotate=args.ds_rotate,
+    print("train from: ",args.dataset_path)
+    train_dataset = Dataset(args.dataset_path, output_size=args.input_size, start=0.0, end=args.split, ds_rotate=args.ds_rotate,
                             random_rotate=True, random_zoom=True,
                             include_depth=args.use_depth, include_rgb=args.use_rgb)
     train_data = torch.utils.data.DataLoader(
@@ -260,7 +260,7 @@ def run():
         shuffle=True,
         num_workers=args.num_workers
     )
-    val_dataset = Dataset(path[args.dataset], output_size=args.input_size, start=args.split, end=1.0, ds_rotate=args.ds_rotate,
+    val_dataset = Dataset(args.dataset_path, output_size=args.input_size, start=args.split, end=1.0, ds_rotate=args.ds_rotate,
                           random_rotate=True, random_zoom=True,
                           include_depth=args.use_depth, include_rgb=args.use_rgb)
     val_data = torch.utils.data.DataLoader(
